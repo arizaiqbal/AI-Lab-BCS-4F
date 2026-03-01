@@ -1,5 +1,3 @@
-from collections import deque  
-
 building = [
     [1, 1, 0, 1],
     [0, 1, 1, 1],
@@ -7,104 +5,51 @@ building = [
     [1, 0, 1, 1]
 ]
 
+rows = len(building)
+cols = len(building[0])
+
 def grid_to_graph(grid):
-    rows, cols = len(grid), len(grid[0])
     graph = {}
+    directions = [(-1,0),(1,0),(0,-1),(0,1)]
     for r in range(rows):
         for c in range(cols):
             if grid[r][c] == 1:
                 neighbors = []
-                for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
-                    nr, nc = r+dr, c+dc
+                for dr, dc in directions:
+                    nr, nc = r + dr, c + dc
                     if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 1:
                         neighbors.append((nr, nc))
-                graph[(r, c)] = neighbors
+                graph[(r,c)] = neighbors
     return graph
 
-class GoalBasedAgent:
-    def __init__(self, goal):
-        self.goal = goal
-
-    def formulate_goal(self, percept):
-        if percept == self.goal:
-            return "Goal reached"
-        return "Searching"
-
-    def bfs_search(self, graph, start, goal):
-        visited = []
-        queue = []
-        visited.append(start)
-        queue.append(start)
-        traversal_order = []
-
-        print("\nStarting BFS Traversal\n")
-
-        while queue:
-            node = queue.pop(0)
-            traversal_order.append(node)
-            print(f" Visiting node: {node}")
-
-            if node == goal:
-                return traversal_order, f"\nGoal {goal} found"
-
-            for neighbour in graph.get(node, []):
-                if neighbour not in visited:
-                    visited.append(neighbour)
-                    queue.append(neighbour)
-
-        return traversal_order, "Goal not found."
-
-    def act(self, percept, graph):
-        goal_status = self.formulate_goal(percept)
-        if goal_status == "Goal reached":
-            return [], f"Goal {self.goal} found at start!"
-        else:
-            return self.bfs_search(graph, percept, self.goal)
-
-class Environment:
-    def __init__(self, graph):
-        self.graph = graph
-
-    def get_percept(self, node):
-        return node
-
-def bfs_shortest_path(graph, start, goal):
-    queue = deque([[start]])
-    visited = set([start])
+def bfs(graph, start, goal):
+    visited = []
+    queue = []
+    came_from = {}
+    visited.append(start)
+    queue.append(start)
+    came_from[start] = None
 
     while queue:
-        path = queue.popleft()
-        node = path[-1]
-
+        node = queue.pop(0)
+        print("Visiting:", node)
         if node == goal:
+            path = []
+            while node is not None:
+                path.append(node)
+                node = came_from[node]
+            path.reverse()
+            print("Shortest path:", path)
             return path
-
         for neighbor in graph.get(node, []):
             if neighbor not in visited:
-                visited.add(neighbor)
-                queue.append(path + [neighbor])
-
+                visited.append(neighbor)
+                queue.append(neighbor)
+                came_from[neighbor] = node
+    print("Goal not found")
     return None
 
-
-
 graph = grid_to_graph(building)
-agent   = GoalBasedAgent((3, 3))
-env     = Environment(graph)
-
-print("Emergency Exit Finder")
-print("Start Position : (0, 0)")
-print("Exit Position  : (3, 3)")
-
-percept = env.get_percept((0, 0))
-traversal, msg = agent.act(percept, graph)
-
-print("\nTraversal Order:")
-print(traversal)
-
-path = bfs_shortest_path(graph, (0, 0), (3, 3))
-
-print("\nShortest Path to Exit:")
-print(path)
-
-print(msg)
+start_node = (0,0)
+goal_node = (3,3)
+bfs(graph, start_node, goal_node)
